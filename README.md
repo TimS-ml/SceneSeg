@@ -8,8 +8,6 @@
                                                         `?8888P 
 ```
 
-[toc]
-
 # Intruduction
 
 Movie Scene Segmentation based on CVPR2020 (A Local-to-Global Approach to Multi-modal Movie Scene Segmentation)
