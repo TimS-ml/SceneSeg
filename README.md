@@ -60,28 +60,27 @@ Please refer to [Install guide from original SceneSeg repo](https://github.com/A
 ├── Extract_Features.py
 ```
 
-I am using 64 videos in total, train:val:test = 48:8:8, data split located in `./data/meta/split.json`
-Features can be loaded through `./src/data/all.py`
-
-If you want to use free GPU resources, use `QuickExec.ipynb` in google colab to execute python scripts
-`train.py` for training (noting special)
-`test.py` allows you to choose features in pretrain model, (if you only curious of the specific features in the pretrained model)
-`EDA.py` provides `*.pkl` and `*.npy` preview, `Extract_Features.py` can extract pre-packed features into the original LGSS repo's format
+- I am using 64 videos in total, train:val:test = 48:8:8, data split located in `./data/meta/split.json`
+- Features can be loaded through `./src/data/all.py`
+- If you want to use free GPU resources, use `QuickExec.ipynb` in google colab to execute python scripts
+- `train.py` for training (noting special)
+- `test.py` allows you to choose features in pretrain model, (if you only curious of the specific features in the pretrained model)
+- `EDA.py` provides `*.pkl` and `*.npy` preview, `Extract_Features.py` can extract pre-packed features into the original LGSS repo's format
 
 
 # About Model Modification
 
-Unfortunately this part is not included in config file
-Model is located in `./src/models/lgss.py`
-Modify `LGSSone` to specify model strucutre for different features, for example `audio` and `cast` contributing very little to the overall performance especially when data size is small, in this case, change `BNet` to `BNet_lite` or `BNet_aud_lite` to speed up training
+Unfortunately this part is not included in config file. 
+Model is located in `./src/models/lgss.py`. 
+Modify `LGSSone` to specify model strucutre for different features, for example `audio` and `cast` contributing very little to the overall performance especially when data size is small, in this case, change `BNet` to `BNet_lite` or `BNet_aud_lite` to speed up training. 
 
-Actually I found BNet performs really terrible in small dataset in `cast` and `audio`, you can further reduce the feature contribution in config file `cfg.model.ratio`
+Actually I found BNet performs really terrible in small dataset in `cast` and `audio`, you can further reduce the feature contribution in config file `cfg.model.ratio`. 
 
 ## Next step
 
 I believe there is better way to aggregrate differnet features together instead of simply sum them up, something similar to attention layer? 
 
-I will update model once I have idea lol
+I will update model once I have idea lol.
 
 
 # More About Original Paper
