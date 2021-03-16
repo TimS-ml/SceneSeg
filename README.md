@@ -8,19 +8,17 @@
                                                         `?8888P 
 ```
 
+[toc]
+
 # Intruduction
 
 Movie Scene Segmentation based on CVPR2020 (A Local-to-Global Approach to Multi-modal Movie Scene Segmentation)
 
 [A Local-to-Global Approach to
 Multi-modal Movie Scene Segmentation](https://anyirao.com/projects/SceneSeg.html)
-
-[Code of Original SceneSeg](https://github.com/AnyiRao/SceneSeg)
-
+[Code of Original SceneSeg (which this repo is heavily based on)](https://github.com/AnyiRao/SceneSeg)
 [MovieNet](http://movienet.site/)
-
 [MovieNet-tools](https://github.com/movienet/movienet-tools)
-
 [MovieNet-tools-doc](http://docs.movienet.site/movie-toolbox/tools#get-started)
 
 
@@ -47,11 +45,50 @@ Recall: 0.5669334164159875
 ```
 
 
-# Preparation and Usage
+# Project Structure
+
 Please refer to [Install guide from original SceneSeg repo](https://github.com/AnyiRao/SceneSeg/blob/master/docs/INSTALL.md)
 
+```
+├── config  # config files location
+├── data    # data root for experiments
+├── pre     # extract features from video
+├── run     # place to store experiments
+├── src     # models and feature loading
+├── utilis  # useful functions 
+├── QuickExec.ipynb
+├── test.py
+├── train.py
+├── EDA.py
+├── Extract_Features.py
+```
 
-# More About that Paper
+I am using 64 videos in total, train:val:test = 48:8:8, data split located in `./data/meta/split.json`
+Features can be loaded through `./src/data/all.py`
+
+If you want to use free GPU resources, use `QuickExec.ipynb` in google colab to execute python scripts
+`train.py` for training (noting special)
+`test.py` allows you to choose features in pretrain model, (if you only curious of the specific features in the pretrained model)
+`EDA.py` provides `*.pkl` and `*.npy` preview, `Extract_Features.py` can extract pre-packed features into the original LGSS repo's format
+
+
+# About Model Modification
+
+Unfortunately this part is not included in config file
+Model is located in `./src/models/lgss.py`
+Modify `LGSSone` to specify model strucutre for different features, for example `audio` and `cast` contributing very little to the overall performance especially when data size is small, in this case, change `BNet` to `BNet_lite` or `BNet_aud_lite` to speed up training
+
+Actually I found BNet performs really terrible in small dataset in `cast` and `audio`, you can further reduce the feature contribution in config file `cfg.model.ratio`
+
+## Next step
+
+I believe there is better way to aggregrate differnet features together instead of simply sum them up, something similar to attention layer? 
+
+I will update model once I have idea lol
+
+
+# More About Original Paper
+
 __Feature Extraction__
 Feature extracting already been aggregrated in [MovieNet-tools](https://github.com/movienet/movienet-tools) (yehhhh), the source code is worth reading, it's not the focuse of this repo through
 Here are how features are extracted:

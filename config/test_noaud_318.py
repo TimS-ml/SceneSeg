@@ -42,7 +42,7 @@ model = dict(
     aud=dict(cos_channel=512),
     bidirectional=True,
     lstm_hidden_size=512,
-    ratio=[0.5, 0.2, 0.2, 0])
+    ratio=[0.6, 0.2, 0.2, 0])
 
 # optimizer
 optim = dict(name='Adam', setting=dict(lr=1e-2, weight_decay=5e-4))

@@ -5,6 +5,69 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 # import pdb
 
 
+class audnet(nn.Module):
+    def __init__(self, cfg):
+        super(audnet, self).__init__()
+        self.conv1 = nn.Conv2d(1,
+                               64,
+                               kernel_size=(3, 3),
+                               stride=(2, 1),
+                               padding=0)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.pool1 = nn.MaxPool2d(kernel_size=(1, 3))
+
+        self.conv2 = nn.Conv2d(64,
+                               192,
+                               kernel_size=(3, 3),
+                               stride=(2, 1),
+                               padding=0)
+        self.bn2 = nn.BatchNorm2d(192)
+        self.relu2 = nn.ReLU(inplace=True)
+        # self.pool2 = nn.MaxPool2d(kernel_size=(1, 3))
+
+        self.conv3 = nn.Conv2d(192,
+                               384,
+                               kernel_size=(3, 3),
+                               stride=(2, 1),
+                               padding=0)
+        self.bn3 = nn.BatchNorm2d(384)
+        self.relu3 = nn.ReLU(inplace=True)
+
+        self.conv4 = nn.Conv2d(384,
+                               256,
+                               kernel_size=(3, 3),
+                               stride=(2, 2),
+                               padding=0)
+        self.bn4 = nn.BatchNorm2d(256)
+        self.relu4 = nn.ReLU(inplace=True)
+
+        self.conv5 = nn.Conv2d(256,
+                               256,
+                               kernel_size=(3, 3),
+                               stride=(2, 2),
+                               padding=0)
+        self.bn5 = nn.BatchNorm2d(256)
+        self.relu5 = nn.ReLU(inplace=True)
+        self.pool5 = nn.MaxPool2d(kernel_size=(2, 2))
+
+        self.conv6 = nn.Conv2d(256, 512, kernel_size=(3, 2), padding=0)
+        self.bn6 = nn.BatchNorm2d(512)
+        self.relu6 = nn.ReLU(inplace=True)
+        self.fc = nn.Linear(512, 512)
+
+    def forward(self, x):  # new: [bs, 1, 512, 1], old: [bs, 1, 257, 90]
+        x = self.pool1(self.relu1(self.bn1(self.conv1(x))))
+        x = self.relu2(self.bn2(self.conv2(x)))
+        x = self.relu3(self.bn3(self.conv3(x)))
+        x = self.relu4(self.bn4(self.conv4(x)))
+        x = self.pool5(self.relu5(self.bn5(self.conv5(x))))
+        x = self.relu6(self.bn6(self.conv6(x)))
+        x = x.squeeze()
+        out = self.fc(x)
+        return out
+
+
 class Cos(nn.Module):
     def __init__(self, cfg):
         super(Cos, self).__init__()
@@ -45,9 +108,9 @@ class BNet(nn.Module):
         return bound
 
 
-class BNet_light(nn.Module):
+class BNet_lite(nn.Module):
     def __init__(self, cfg):
-        super(BNet_light, self).__init__()
+        super(BNet_lite, self).__init__()
         self.cos = Cos(cfg)
 
     def forward(self, x):  # [batch_size, seq_len, shot_num, feat_dim]
@@ -57,11 +120,49 @@ class BNet_light(nn.Module):
         return bound
 
 
-class BNet_aud_light(nn.Module):
+class BNet_aud(nn.Module):
     def __init__(self, cfg):
-        super(BNet_aud_light, self).__init__()
+        super(BNet_aud, self).__init__()
         self.shot_num = cfg.shot_num
         self.channel = cfg.model.sim_channel
+        self.audnet = audnet(cfg)
+        self.conv1 = nn.Conv2d(1, self.channel, 
+                               kernel_size=(cfg.shot_num, 1))
+        # for cosine_similarity, kernel_size same as Cos's conv1
+        self.conv2 = nn.Conv2d(1, self.channel,
+                               kernel_size=(cfg.shot_num // 2, 1))
+        self.max3d = nn.MaxPool3d(kernel_size=(self.channel, 1, 1))
+
+    # (257, 90) is the output size of stft
+    # old: [batch_size, seq_len, shot_num, 257, 90]
+    def forward(self, x):  # x: [batch_size, seq_len, shot_num, 512, 1]
+        # B_r
+        # context = x.view(x.shape[0] * x.shape[1] * x.shape[2],
+        #                  1, x.shape[-2], x.shape[-1])
+        context = x.view(x.shape[0] * x.shape[1] * x.shape[2],
+                         1, x.shape[-1], -1)
+        # x: [batch_size*seq_len*shot_num , 1, 257, 90]
+        context = self.audnet(context).view(x.shape[0] * x.shape[1], 1,
+                                            self.shot_num, -1)
+        # B_d using output of B_r
+        # [batch_size, seq_len, shot_num, feat_dim]
+        # x = x.view(-1, 1, x.shape[2], x.shape[3])
+        part1, part2 = torch.split(context, [self.shot_num // 2] * 2, dim=2)
+        part1 = self.conv2(part1).squeeze()
+        part2 = self.conv2(part2).squeeze()
+        sim = F.cosine_similarity(part1, part2, dim=2)
+        bound = sim
+        return bound
+
+
+class BNet_aud_lite(nn.Module):
+    def __init__(self, cfg):
+        super(BNet_aud_lite, self).__init__()
+        self.shot_num = cfg.shot_num
+        self.channel = cfg.model.sim_channel
+        self.audnet = audnet(cfg)
+        self.conv1 = nn.Conv2d(1, self.channel, 
+                               kernel_size=(cfg.shot_num, 1))
         # for cosine_similarity, kernel_size same as Cos's conv1
         self.conv2 = nn.Conv2d(1, self.channel,
                                kernel_size=(cfg.shot_num // 2, 1))
@@ -90,13 +191,13 @@ class LGSSone(nn.Module):
             self.bnet = BNet(cfg)
             self.input_dim = (cfg.model.place_feat_dim + cfg.model.sim_channel)
         elif mode == "cast":
-            self.bnet = BNet_light(cfg)
+            self.bnet = BNet(cfg)
             self.input_dim = (cfg.model.cast_feat_dim + cfg.model.sim_channel)
         elif mode == "act":
             self.bnet = BNet(cfg)
             self.input_dim = (cfg.model.act_feat_dim + cfg.model.sim_channel)
         elif mode == "aud":
-            self.bnet = BNet_aud_light(cfg)
+            self.bnet = BNet_aud(cfg)
             self.input_dim = cfg.model.aud_feat_dim
         else:
             pass
