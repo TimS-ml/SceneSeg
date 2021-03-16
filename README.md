@@ -14,12 +14,11 @@
 
 Movie Scene Segmentation based on CVPR2020 (A Local-to-Global Approach to Multi-modal Movie Scene Segmentation)
 
-[A Local-to-Global Approach to
-Multi-modal Movie Scene Segmentation](https://anyirao.com/projects/SceneSeg.html)
-[Code of Original SceneSeg (which this repo is heavily based on)](https://github.com/AnyiRao/SceneSeg)
-[MovieNet](http://movienet.site/)
-[MovieNet-tools](https://github.com/movienet/movienet-tools)
-[MovieNet-tools-doc](http://docs.movienet.site/movie-toolbox/tools#get-started)
+- [A Local-to-Global Approach to Multi-modal Movie Scene Segmentation](https://anyirao.com/projects/SceneSeg.html)
+- [Code of Original SceneSeg (which this repo is heavily based on)](https://github.com/AnyiRao/SceneSeg)
+- [MovieNet](http://movienet.site/)
+- [MovieNet-tools](https://github.com/movienet/movienet-tools)
+- [MovieNet-tools-doc](http://docs.movienet.site/movie-toolbox/tools#get-started)
 
 
 # Evaluation
